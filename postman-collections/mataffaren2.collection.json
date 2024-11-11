@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "99b18534-f689-4c3d-a73b-c85f97ede190",
+		"_postman_id": "752e8013-998a-4273-98f7-d4dbb1ab5123",
 		"name": "mataffären",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
 		"_exporter_id": "39537779"
@@ -206,9 +206,11 @@
 							"\r",
 							"\r",
 							"// do the same for Product type counter\r",
-							"let urlProductType = categories.children[categoryCounterPT].children[productTypeCounter].url;\r",
-							"pm.environment.set('urlProductType', urlProductType);\r",
-							"pm.variables.set('productTypeCounter', productTypeCounter + 1);\r",
+							"if (categories.children[categoryCounterPT].children[productTypeCounter].url != undefined && categories.children[categoryCounterPT] != undefined){\r",
+							"    let urlProductType = categories.children[categoryCounterPT].children[productTypeCounter].url;\r",
+							"    pm.environment.set('urlProductType', urlProductType);\r",
+							"    pm.variables.set('productTypeCounter', productTypeCounter + 1);\r",
+							"}\r",
 							"\r",
 							"\r",
 							""
@@ -247,7 +249,7 @@
 							"\r",
 							"\r",
 							"// Repeat/loop this request until we have requested all main categories\r",
-							"if(categories.children[categoryCounterPT].children[productTypeCounter]){\r",
+							"if(categories.children[categoryCounterPT].children[productTypeCounter] && categories.children[categoryCounterPT].children[productTypeCounter] != undefined){\r",
 							"  // Repeat this request (with new variable data for the url)\r",
 							"  pm.execution.setNextRequest('Get product types within product lists');\r",
 							"}\r",

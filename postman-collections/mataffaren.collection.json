@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "99b18534-f689-4c3d-a73b-c85f97ede190",
+		"_postman_id": "752e8013-998a-4273-98f7-d4dbb1ab5123",
 		"name": "mataffären",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
 		"_exporter_id": "39537779"
@@ -255,10 +255,7 @@
 							"    pm.variables.set('categoryCounterPT', categoryCounterPT + 1);    \r",
 							"    if(categories.children[categoryCounterPT]){\r",
 							"        pm.variables.set('productTypeCounter', 0)\r",
-							"        if(categories.children[categoryCounterPT].children[productTypeCounter]){\r",
-							"            pm.execution.setNextRequest('Get product types within product lists');\r",
-							"        }\r",
-							"        //pm.execution.setNextRequest('Get product types within product lists');\r",
+							"        pm.execution.setNextRequest('Get product types within product lists');\r",
 							"    }\r",
 							"}"
 						],
