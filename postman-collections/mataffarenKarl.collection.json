@@ -206,7 +206,7 @@
 							"\r",
 							"\r",
 							"// do the same for Product type counter\r",
-							"if (categories.children[categoryCounterPT].children[productTypeCounter].url != undefined && categories.children[categoryCounterPT] != undefined){\r",
+							"if (categories.children[categoryCounterPT] && categories.children[categoryCounterPT].children[productTypeCounter] != undefined){\r",
 							"    let urlProductType = categories.children[categoryCounterPT].children[productTypeCounter].url;\r",
 							"    pm.environment.set('urlProductType', urlProductType);\r",
 							"    pm.variables.set('productTypeCounter', productTypeCounter + 1);\r",
