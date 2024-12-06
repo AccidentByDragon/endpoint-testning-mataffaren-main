@@ -1,10 +1,9 @@
 {
 	"info": {
-		"_postman_id": "2290cab7-8e82-42db-bfa3-b16c45400c2d",
+		"_postman_id": "1bf6ea31-c112-493f-9eb7-10893095191d",
 		"name": "Tests of Mataffären",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "33841556",
-		"_collection_link": "https://www.postman.com/noddan84/workspace/pvt23kimnordin/collection/33841556-2290cab7-8e82-42db-bfa3-b16c45400c2d?action=share&source=collection_link&creator=33841556"
+		"_exporter_id": "39537779"
 	},
 	"item": [
 		{
@@ -49,7 +48,8 @@
 							"pm.variables.set('categoryData', responseData);",
 							"",
 							"// A counter for products within a main category to fecth",
-							"pm.variables.set('categoryCounter', 0);"
+							"pm.variables.set('categoryCounter', 0);",
+							"pm.variables.set('categoryCounterPT', 0);"
 						],
 						"type": "text/javascript",
 						"packages": {}
@@ -96,6 +96,7 @@
 							"// Unpack from JSON all the categories\r",
 							"let categories = pm.variables.get('categoryData');\r",
 							"// Get the category counter and product type counter and convert to number (using +)\r",
+							"let categoryCounter = pm.variables.get('categoryCounter');\r",
 							"let categoryCounterPT = pm.variables.get('categoryCounterPT');\r",
 							"let productTypeCounter = pm.variables.get('productTypeCounter');\r",
 							"\r",
@@ -115,18 +116,13 @@
 					"listen": "test",
 					"script": {
 						"exec": [
+							"let responseData = pm.response.json();\r",
 							"// Unpack from JSON all the categories\r",
 							"let categories = pm.variables.get('categoryData');\r",
 							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounter = pm.variables.get('categoryCounter');\r",
 							"let categoryCounterPT = pm.variables.get('categoryCounterPT');\r",
 							"let productTypeCounter = pm.variables.get('productTypeCounter');\r",
-							"\r",
-							"// Unpack from JSON all the categories\r",
-							"let categories = pm.variables.get('categoryData');\r",
-							"// Get the category counter and convert to number (using +)\r",
-							"let categoryCounterPT = pm.variables.get('categoryCounterPT');\r",
-							"let productTypeCounter = pm.variables.get('productTypeCounter');\r",
-							"\r",
 							"// Tests\r",
 							"\r",
 							"// Check that the status code is 200 (OK)\r",
@@ -140,9 +136,9 @@
 							"});\r",
 							"\r",
 							"// Check that we have at least one product in the this main category\r",
-							"let responseData = pm.response.json();\r",
+							"//let responseData = pm.response.json();\r",
 							"pm.test('There should be at least one product in a main category', () => {\r",
-							"    pm.expect(responseData.results.length).to.be.at.least(1);\r",
+							"    pm.expect(categories.children[categoryCounterPT].children.length).to.be.least(1);\r",
 							"});\r",
 							"\r",
 							"\r",
