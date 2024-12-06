@@ -1,0 +1,1302 @@
+{
+	"info": {
+		"_postman_id": "2290cab7-8e82-42db-bfa3-b16c45400c2d",
+		"name": "Tests of Mataffären",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "33841556",
+		"_collection_link": "https://www.postman.com/noddan84/workspace/pvt23kimnordin/collection/33841556-2290cab7-8e82-42db-bfa3-b16c45400c2d?action=share&source=collection_link&creator=33841556"
+	},
+	"item": [
+		{
+			"name": "Get categories",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Get the data from the response unpacked from json",
+							"let responseData = pm.response.json();",
+							"",
+							"// Check that the status code is 200 (OK)",
+							"pm.test('The status code of the response should be 200', () => {",
+							"  pm.expect(pm.response).to.have.status(200);",
+							"});",
+							"",
+							"// Check that we have a response time of < 2 second",
+							"pm.test('The response time should be below 2 second', () => {",
+							"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+							"})",
+							"",
+							"// Check that there are at least 10 main categories (children)",
+							"pm.test('There should be at least 10 main categories', () => {",
+							"  pm.expect(responseData.children.length).to.be.at.least(10);",
+							"});",
+							"",
+							"// Check that each main category has the properites title and url",
+							"pm.test('Each main category should have the properties title and url', () => {",
+							"    for(let category of responseData.children){",
+							"        // an empty string is falsy -> convert to false using !!",
+							"        // a string with content is truthy -> convert to true using !!",
+							"        pm.expect(!!category.title).to.be.true;",
+							"        pm.expect(!!category.url).to.be.true;",
+							"        // check that datatype is string for both title and url",
+							"        pm.expect(category.title).to.be.string;",
+							"        pm.expect(category.url).to.be.string;",
+							"    }",
+							"});",
+							"",
+							"// Save the responseData as an environment variable",
+							"pm.variables.set('categoryData', responseData);",
+							"",
+							"// A counter for products within a main category to fecth",
+							"pm.variables.set('categoryCounter', 0);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Set the domain",
+							"pm.environment.set('domain', 'http://localhost:4000')"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{domain}}/api/leftMenu/categorytree",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"leftMenu",
+						"categorytree"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get product types within product lists",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Set the domain\r",
+							"pm.environment.set('domain', 'http://localhost:4000')\r",
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and product type counter and convert to number (using +)\r",
+							"let categoryCounterPT = pm.variables.get('categoryCounterPT');\r",
+							"let productTypeCounter = pm.variables.get('productTypeCounter');\r",
+							"\r",
+							"\r",
+							"// do the same for Product type counter\r",
+							"if (categories.children[categoryCounterPT] && categories.children[categoryCounterPT].children[productTypeCounter] != undefined){\r",
+							"    let urlProductType = categories.children[categoryCounterPT].children[productTypeCounter].url;\r",
+							"    pm.environment.set('urlProductType', urlProductType);\r",
+							"    pm.variables.set('productTypeCounter', productTypeCounter + 1);\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounterPT = pm.variables.get('categoryCounterPT');\r",
+							"let productTypeCounter = pm.variables.get('productTypeCounter');\r",
+							"\r",
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounterPT = pm.variables.get('categoryCounterPT');\r",
+							"let productTypeCounter = pm.variables.get('productTypeCounter');\r",
+							"\r",
+							"// Tests\r",
+							"\r",
+							"// Check that the status code is 200 (OK)\r",
+							"pm.test('The status code of the response should be 200', () => {\r",
+							"  pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"// Check that we have a response time of < 1 second\r",
+							"pm.test('The response time should be below 1 second', () => {\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000);\r",
+							"});\r",
+							"\r",
+							"// Check that we have at least one product in the this main category\r",
+							"let responseData = pm.response.json();\r",
+							"pm.test('There should be at least one product in a main category', () => {\r",
+							"    pm.expect(responseData.results.length).to.be.at.least(1);\r",
+							"});\r",
+							"\r",
+							"\r",
+							"// Repeat/loop this request until we have requested all main categories\r",
+							"if(categories.children[categoryCounterPT].children[productTypeCounter] && categories.children[categoryCounterPT].children[productTypeCounter] != undefined){\r",
+							"  // Repeat this request (with new variable data for the url)\r",
+							"  pm.execution.setNextRequest('Get product types within product lists');\r",
+							"}\r",
+							"if(!categories.children[categoryCounterPT].children[productTypeCounter]){\r",
+							"    pm.variables.set('categoryCounterPT', categoryCounterPT + 1);    \r",
+							"    if(categories.children[categoryCounterPT]){\r",
+							"        pm.variables.set('productTypeCounter', 0)\r",
+							"        pm.execution.setNextRequest('Get product types within product lists');\r",
+							"    }\r",
+							"}\r",
+							"\r",
+							"if(!categories.children[categoryCounter]){\r",
+							"pm.variables.set('categoryCounter', 0);\r",
+							"pm.execution.setNextRequest('Get productlist within category - Top Rated');\t\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{domain}}/api/c/{{urlProductType}}?size=30&page=0&sort=topRated",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"c",
+						"{{urlProductType}}"
+					],
+					"query": [
+						{
+							"key": "size",
+							"value": "30"
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "sort",
+							"value": "topRated"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get productlist within category - Top Rated",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories",
+							"let categories = pm.variables.get('categoryData');",
+							"// Get the category counter and convert to number (using +)",
+							"let categoryCounter = pm.variables.get('categoryCounter');",
+							"",
+							"// Get the category part of the url and set it as an environment variable",
+							"let urlCategoryPart = categories.children[categoryCounter].url;",
+							"pm.environment.set('urlCategoryPart',urlCategoryPart);",
+							"",
+							"// Add 1 to the categoryCounter environment variable",
+							"pm.variables.set('categoryCounter', categoryCounter + 1);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories",
+							"let categories = pm.variables.get('categoryData');",
+							"// Get the category counter and convert to number (using +)",
+							"let categoryCounter = pm.variables.get('categoryCounter');",
+							"",
+							"// Tests",
+							"",
+							"// Check that the status code is 200 (OK)",
+							"pm.test('The status code of the response should be 200', () => {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// Check that we have a response time of < 2 second",
+							"pm.test('The response time should be below 2 second', () => {",
+							"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+							"});",
+							"",
+							"// Check that we have at least one product in the this main category",
+							"let responseData = pm.response.json();",
+							"",
+							"pm.test('There should be at least one product in a main category', () => {",
+							"    pm.expect(responseData.results.length).to.be.at.least(1);",
+							"});",
+							"",
+							"// Kontrollera att \"topRated\" är vald i sorteringsalternativen",
+							"pm.test(\"TopRated (Populärast) should be selected\", function () {",
+							"    // Hitta objektet som har \"code\": \"topRated\"",
+							"    let topRatedSort = responseData.sorts.find(sort => sort.code === \"topRated\");",
+							"",
+							"    // Verifiera att \"selected\" är true",
+							"    pm.expect(topRatedSort).to.have.property(\"selected\", true);",
+							"});",
+							"",
+							"",
+							"// Repeat/loop this request until we have requested all main categories",
+							"if(categories.children[categoryCounter]){",
+							"  // Repeat this request (with new variable data for the url)",
+							"  pm.execution.setNextRequest('Get productlist within category - Top Rated');\t\t",
+							"}",
+							"",
+							"if(!categories.children[categoryCounter]){",
+							"pm.variables.set('categoryCounter', 0);",
+							"pm.execution.setNextRequest('Get productlist within category - Name-Asc');\t",
+							"}",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{domain}}/api/c/{{urlCategoryPart}}?size=30&page=0&sort=topRated",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"c",
+						"{{urlCategoryPart}}"
+					],
+					"query": [
+						{
+							"key": "size",
+							"value": "30"
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "sort",
+							"value": "topRated"
+						},
+						{
+							"key": "",
+							"value": "",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get productlist within category - Name-Asc",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounter = pm.variables.get('categoryCounter');\r",
+							"\r",
+							"// Get the category part of the url and set it as an environment variable\r",
+							"let urlCategoryPart = categories.children[categoryCounter].url;\r",
+							"pm.environment.set('urlCategoryPart',urlCategoryPart);\r",
+							"\r",
+							"// Add 1 to the categoryCounter environment variable\r",
+							"pm.variables.set('categoryCounter', categoryCounter + 1);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounter = pm.variables.get('categoryCounter');\r",
+							"\r",
+							"\r",
+							"\r",
+							"// Tests\r",
+							"\r",
+							"// Check that the status code is 200 (OK)\r",
+							"pm.test('The status code of the response should be 200', () => {\r",
+							"  pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"// Check that we have a response time of < 2 second\r",
+							"pm.test('The response time should be below 2 second', () => {\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+							"});\r",
+							"\r",
+							"// Check that we have at least one product in the this main category\r",
+							"let responseData = pm.response.json();\r",
+							"pm.test('There should be at least one product in a main category', () => {\r",
+							"    pm.expect(responseData.results.length).to.be.at.least(1);\r",
+							"});\r",
+							"\r",
+							"// Get the products array from the response\r",
+							"let productNames = responseData.results.map(item => item.name);\r",
+							"console.log(productNames);\r",
+							"// Check if the products are in alphabetical order\r",
+							"let isOrdered = JSON.stringify(productNames) === JSON.stringify([...productNames].sort());\r",
+							"let orderedProducts = JSON.stringify([...productNames].sort());\r",
+							"console.log(orderedProducts)\r",
+							"// Set the test result based on whether the list is in alphabetical order\r",
+							"if (isOrdered) {\r",
+							"    pm.test(\"The products list is in ascending alphabetical order.\", function () {\r",
+							"        pm.expect(isOrdered).to.be.true;\r",
+							"    });\r",
+							"} else {\r",
+							"    pm.test(\"The products list is NOT in ascending alphabetical order.\", function () {\r",
+							"        pm.expect(isOrdered).to.be.true; // This will fail if not ordered\r",
+							"    });\r",
+							"}\r",
+							"\r",
+							"\r",
+							"// Repeat/loop this request until we have requested all main categories\r",
+							"if(categories.children[categoryCounter]){\r",
+							"  // Repeat this request (with new variable data for the url)\r",
+							"  pm.execution.setNextRequest('Get productlist within category - Name-Asc');\r",
+							"}\r",
+							"\r",
+							"if(!categories.children[categoryCounter]){\r",
+							"pm.variables.set('categoryCounter', 0);\r",
+							"pm.execution.setNextRequest('Get productlist within category - Name-Desc');\t\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{domain}}/api/c/{{urlCategoryPart}}?size=30&page=0&sort=name-asc",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"c",
+						"{{urlCategoryPart}}"
+					],
+					"query": [
+						{
+							"key": "size",
+							"value": "30"
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "sort",
+							"value": "name-asc"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get productlist within category - Name-Desc",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounter = pm.variables.get('categoryCounter');\r",
+							"\r",
+							"// Get the category part of the url and set it as an environment variable\r",
+							"let urlCategoryPart = categories.children[categoryCounter].url;\r",
+							"pm.environment.set('urlCategoryPart',urlCategoryPart);\r",
+							"\r",
+							"// Add 1 to the categoryCounter environment variable\r",
+							"pm.variables.set('categoryCounter', categoryCounter + 1);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounter = pm.variables.get('categoryCounter');\r",
+							"\r",
+							"\r",
+							"\r",
+							"// Tests\r",
+							"\r",
+							"// Check that the status code is 200 (OK)\r",
+							"pm.test('The status code of the response should be 200', () => {\r",
+							"  pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"// Check that we have a response time of < 2 second\r",
+							"pm.test('The response time should be below 2 second', () => {\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+							"});\r",
+							"\r",
+							"// Check that we have at least one product in the this main category\r",
+							"let responseData = pm.response.json();\r",
+							"pm.test('There should be at least one product in a main category', () => {\r",
+							"    pm.expect(responseData.results.length).to.be.at.least(1);\r",
+							"});\r",
+							"\r",
+							"// Get the products array from the response\r",
+							"let productNames = responseData.results.map(item => item.name);\r",
+							"console.log(productNames);\r",
+							"// Check if the products are in alphabetical order\r",
+							"let isOrdered = JSON.stringify(productNames) === JSON.stringify([...productNames].sort().reverse());\r",
+							"let orderedProducts = JSON.stringify([...productNames].sort());\r",
+							"console.log(orderedProducts)\r",
+							"// Set the test result based on whether the list is in alphabetical order\r",
+							"if (isOrdered) {\r",
+							"    pm.test(\"The products list is in ascending alphabetical order.\", function () {\r",
+							"        pm.expect(isOrdered).to.be.true;\r",
+							"    });\r",
+							"} else {\r",
+							"    pm.test(\"The products list is NOT in ascending alphabetical order.\", function () {\r",
+							"        pm.expect(isOrdered).to.be.true; // This will fail if not ordered\r",
+							"    });\r",
+							"}\r",
+							"\r",
+							"// Repeat/loop this request until we have requested all main categories\r",
+							"if(categories.children[categoryCounter]){\r",
+							"  // Repeat this request (with new variable data for the url)\r",
+							"  pm.execution.setNextRequest('Get productlist within category - Name-Desc');\r",
+							"}\r",
+							"\r",
+							"if(!categories.children[categoryCounter]){\r",
+							"pm.variables.set('categoryCounter', 0);\r",
+							"pm.execution.setNextRequest('Get productlist within category - Price-Asc');\t\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{domain}}/api/c/{{urlCategoryPart}}?size=30&page=0&sort=name-desc",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"c",
+						"{{urlCategoryPart}}"
+					],
+					"query": [
+						{
+							"key": "size",
+							"value": "30"
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "sort",
+							"value": "name-desc"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get productlist within category - Price-Asc",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounter = pm.variables.get('categoryCounter');\r",
+							"\r",
+							"// Get the category part of the url and set it as an environment variable\r",
+							"let urlCategoryPart = categories.children[categoryCounter].url;\r",
+							"pm.environment.set('urlCategoryPart',urlCategoryPart);\r",
+							"\r",
+							"// Add 1 to the categoryCounter environment variable\r",
+							"pm.variables.set('categoryCounter', categoryCounter + 1);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounter = pm.variables.get('categoryCounter');\r",
+							"\r",
+							"\r",
+							"\r",
+							"// Tests\r",
+							"\r",
+							"// Check that the status code is 200 (OK)\r",
+							"pm.test('The status code of the response should be 200', () => {\r",
+							"  pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"// Check that we have a response time of < 2 second\r",
+							"pm.test('The response time should be below 2 second', () => {\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+							"});\r",
+							"\r",
+							"// Check that we have at least one product in the this main category\r",
+							"let responseData = pm.response.json();\r",
+							"pm.test('There should be at least one product in a main category', () => {\r",
+							"    pm.expect(responseData.results.length).to.be.at.least(1);\r",
+							"});\r",
+							"\r",
+							"// Get the products array from the response\r",
+							"let productPrices = responseData.results.map(item => \r",
+							"    parseFloat(item.price.replace(\" kr\", \"\").replace(\",\", \".\"))\r",
+							");\r",
+							"console.log(productPrices);\r",
+							"// Create a sorted copy of the prices array (sorting numbers directly)\r",
+							"let sortedPrices = [...productPrices].sort((a, b) => a - b);\r",
+							"console.log(sortedPrices);\r",
+							"// Check if the original array is the same as the sorted one\r",
+							"let isOrdered = JSON.stringify(productPrices) === JSON.stringify(sortedPrices);\r",
+							"// Set the test result based on whether the list is in ascending order\r",
+							"pm.test(\"The products list is in ascending order.\", function () {\r",
+							"    pm.expect(isOrdered).to.be.true;\r",
+							"});\r",
+							"\r",
+							"// Repeat/loop this request until we have requested all main categories\r",
+							"if(categories.children[categoryCounter]){\r",
+							"  // Repeat this request (with new variable data for the url)\r",
+							"  pm.execution.setNextRequest('Get productlist within category - Price-Asc');\r",
+							"}\r",
+							"\r",
+							"if(!categories.children[categoryCounter]){\r",
+							"pm.variables.set('categoryCounter', 0);\r",
+							"pm.execution.setNextRequest('Get productlist within category - Price-Desc');\r",
+							"}\t"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{domain}}/api/c/{{urlCategoryPart}}?size=30&page=0&sort=price-asc",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"c",
+						"{{urlCategoryPart}}"
+					],
+					"query": [
+						{
+							"key": "size",
+							"value": "30"
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "sort",
+							"value": "price-asc"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get productlist within category - Price-Desc",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounter = pm.variables.get('categoryCounter');\r",
+							"\r",
+							"// Get the category part of the url and set it as an environment variable\r",
+							"let urlCategoryPart = categories.children[categoryCounter].url;\r",
+							"pm.environment.set('urlCategoryPart',urlCategoryPart);\r",
+							"\r",
+							"// Add 1 to the categoryCounter environment variable\r",
+							"pm.variables.set('categoryCounter', categoryCounter + 1);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounter = pm.variables.get('categoryCounter');\r",
+							"\r",
+							"\r",
+							"\r",
+							"// Tests\r",
+							"\r",
+							"// Check that the status code is 200 (OK)\r",
+							"pm.test('The status code of the response should be 200', () => {\r",
+							"  pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"// Check that we have a response time of < 2 second\r",
+							"pm.test('The response time should be below 2 second', () => {\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+							"});\r",
+							"\r",
+							"// Check that we have at least one product in the this main category\r",
+							"let responseData = pm.response.json();\r",
+							"pm.test('There should be at least one product in a main category', () => {\r",
+							"    pm.expect(responseData.results.length).to.be.at.least(1);\r",
+							"});\r",
+							"\r",
+							"// Get the products array from the response\r",
+							"let productPrices = responseData.results.map(item => \r",
+							"    parseFloat(item.price.replace(\" kr\", \"\").replace(\",\", \".\"))\r",
+							");\r",
+							"console.log(productPrices);\r",
+							"// Create a sorted copy of the prices array (sorting numbers directly)\r",
+							"let sortedPrices = [...productPrices].sort((a, b) => b - a);\r",
+							"console.log(sortedPrices);\r",
+							"// Check if the original array is the same as the sorted one\r",
+							"let isOrdered = JSON.stringify(productPrices) === JSON.stringify(sortedPrices);\r",
+							"// Set the test result based on whether the list is in descending order\r",
+							"pm.test(\"The products list is in descending order.\", function () {\r",
+							"    pm.expect(isOrdered).to.be.true;\r",
+							"});\r",
+							"\r",
+							"// Repeat/loop this request until we have requested all main categories\r",
+							"if(categories.children[categoryCounter]){\r",
+							"  // Repeat this request (with new variable data for the url)\r",
+							"  pm.execution.setNextRequest('Get productlist within category - Price-Desc');\r",
+							"}\r",
+							"\r",
+							"if(!categories.children[categoryCounter]){\r",
+							"pm.variables.set('categoryCounter', 0);\r",
+							"pm.execution.setNextRequest('Get productlist within category - Compareprice-Asc');\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{domain}}/api/c/{{urlCategoryPart}}?size=30&page=0&sort=price-desc",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"c",
+						"{{urlCategoryPart}}"
+					],
+					"query": [
+						{
+							"key": "size",
+							"value": "30"
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "sort",
+							"value": "price-desc"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get productlist within category - Compareprice-Asc",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounter = pm.variables.get('categoryCounter');\r",
+							"\r",
+							"// Get the category part of the url and set it as an environment variable\r",
+							"let urlCategoryPart = categories.children[categoryCounter].url;\r",
+							"pm.environment.set('urlCategoryPart',urlCategoryPart);\r",
+							"\r",
+							"// Add 1 to the categoryCounter environment variable\r",
+							"pm.variables.set('categoryCounter', categoryCounter + 1);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounter = pm.variables.get('categoryCounter');\r",
+							"\r",
+							"\r",
+							"\r",
+							"// Tests\r",
+							"\r",
+							"// Check that the status code is 200 (OK)\r",
+							"pm.test('The status code of the response should be 200', () => {\r",
+							"  pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"// Check that we have a response time of < 2 second\r",
+							"pm.test('The response time should be below 2 second', () => {\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+							"});\r",
+							"\r",
+							"// Check that we have at least one product in the this main category\r",
+							"let responseData = pm.response.json();\r",
+							"pm.test('There should be at least one product in a main category', () => {\r",
+							"    pm.expect(responseData.results.length).to.be.at.least(1);\r",
+							"});\r",
+							"\r",
+							"// Test that \"compareprice-asc\" is selected in the sort options\r",
+							"pm.test(\"ComparePrice (Pris - Billigast - Dyrast) should be selected\", function () {\r",
+							"    // Hitta objektet som har \"code\": \"compareprice-asc\"\r",
+							"    let comparePriceAscSort = responseData.sorts.find(sort => sort.code === \"compareprice-asc\");\r",
+							"\r",
+							"    // Verifiera att \"selected\" är true\r",
+							"    pm.expect(comparePriceAscSort).to.have.property(\"selected\", true);\r",
+							"});\r",
+							"\r",
+							"// Extrahera och rensa jämförpriser från produktlistan\r",
+							"let productComparePrices = responseData.results.map(item => \r",
+							"    parseFloat(item.comparePrice.replace(\" kr\", \"\").replace(\",\", \".\"))\r",
+							");\r",
+							"console.log(\"Compare Prices:\", productComparePrices);\r",
+							"\r",
+							"// Skapa en kopia av jämförpriserna och sortera den i stigande ordning\r",
+							"let sortedComparePrices = [...productComparePrices].sort((a, b) => a - b);\r",
+							"console.log(\"Sorted Compare Prices:\", sortedComparePrices);\r",
+							"\r",
+							"// Kolla om den ursprungliga listan är den samma som den sorterade listan\r",
+							"let isComparePriceOrdered = JSON.stringify(productComparePrices) === JSON.stringify(sortedComparePrices);\r",
+							"\r",
+							"// Testa om jämförpriserna är sorterade korrekt\r",
+							"pm.test(\"The products list is in ascending comparePrice order (comparePrice-asc).\", function () {\r",
+							"    pm.expect(isComparePriceOrdered).to.be.true;\r",
+							"});\r",
+							"\r",
+							"\r",
+							"// Repeat/loop this request until we have requested all main categories\r",
+							"if(categories.children[categoryCounter]){\r",
+							"  // Repeat this request (with new variable data for the url)\r",
+							"  pm.execution.setNextRequest('Get productlist within category - Compareprice-Asc');\r",
+							"}\r",
+							"\r",
+							"if(!categories.children[categoryCounter]){\r",
+							"pm.variables.set('categoryCounter', 0);\r",
+							"pm.execution.setNextRequest('Get productlist within category - Compareprice-Desc');\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{domain}}/api/c/{{urlCategoryPart}}?size=30&page=0&sort=compareprice-asc",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"c",
+						"{{urlCategoryPart}}"
+					],
+					"query": [
+						{
+							"key": "size",
+							"value": "30"
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "sort",
+							"value": "compareprice-asc"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get productlist within category - Compareprice-Desc",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounter = pm.variables.get('categoryCounter');\r",
+							"\r",
+							"// Get the category part of the url and set it as an environment variable\r",
+							"let urlCategoryPart = categories.children[categoryCounter].url;\r",
+							"pm.environment.set('urlCategoryPart',urlCategoryPart);\r",
+							"\r",
+							"// Add 1 to the categoryCounter environment variable\r",
+							"pm.variables.set('categoryCounter', categoryCounter + 1);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounter = pm.variables.get('categoryCounter');\r",
+							"\r",
+							"\r",
+							"\r",
+							"// Tests\r",
+							"\r",
+							"// Check that the status code is 200 (OK)\r",
+							"pm.test('The status code of the response should be 200', () => {\r",
+							"  pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"// Check that we have a response time of < 2 second\r",
+							"pm.test('The response time should be below 2 second', () => {\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+							"});\r",
+							"\r",
+							"// Check that we have at least one product in the this main category\r",
+							"let responseData = pm.response.json();\r",
+							"pm.test('There should be at least one product in a main category', () => {\r",
+							"    pm.expect(responseData.results.length).to.be.at.least(1);\r",
+							"});\r",
+							"\r",
+							"// Test that \"compareprice-desc\" is selected in the sort options\r",
+							"pm.test(\"ComparePrice (Pris - Dyrast - Billigast) should be selected\", function () {\r",
+							"    // Hitta objektet som har \"code\": \"compareprice-desc\"\r",
+							"    let comparePriceDescSort = responseData.sorts.find(sort => sort.code === \"compareprice-desc\");\r",
+							"\r",
+							"    // Verifiera att \"selected\" är true\r",
+							"    pm.expect(comparePriceDescSort).to.have.property(\"selected\", true);\r",
+							"});\r",
+							"\r",
+							"// Extrahera och rensa jämförpriser från produktlistan\r",
+							"let productComparePrices = responseData.results.map(item => \r",
+							"    parseFloat(item.comparePrice.replace(\" kr\", \"\").replace(\",\", \".\"))\r",
+							");\r",
+							"console.log(\"Compare Prices:\", productComparePrices);\r",
+							"\r",
+							"// Skapa en kopia av jämförpriserna och sortera den i stigande ordning\r",
+							"let sortedComparePrices = [...productComparePrices].sort((a, b) => b - a);\r",
+							"console.log(\"Sorted Compare Prices:\", sortedComparePrices);\r",
+							"\r",
+							"// Kolla om den ursprungliga listan är den samma som den sorterade listan\r",
+							"let isComparePriceOrdered = JSON.stringify(productComparePrices) === JSON.stringify(sortedComparePrices);\r",
+							"\r",
+							"// Testa om jämförpriserna är sorterade korrekt\r",
+							"pm.test(\"The products list is in descending comparePrice order (comparePrice-desc).\", function () {\r",
+							"    pm.expect(isComparePriceOrdered).to.be.true;\r",
+							"});\r",
+							"\r",
+							"\r",
+							"// Repeat/loop this request until we have requested all main categories\r",
+							"if(categories.children[categoryCounter]){\r",
+							"  // Repeat this request (with new variable data for the url)\r",
+							"  pm.execution.setNextRequest('Get productlist within category - Compareprice-Desc');\r",
+							"}\r",
+							"\r",
+							"if(!categories.children[categoryCounter]){\r",
+							"pm.variables.set('categoryCounter', 0);\r",
+							"pm.execution.setNextRequest('Get productlist within category - size10');\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{domain}}/api/c/{{urlCategoryPart}}?size=30&page=0&sort=compareprice-desc",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"c",
+						"{{urlCategoryPart}}"
+					],
+					"query": [
+						{
+							"key": "size",
+							"value": "30"
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "sort",
+							"value": "compareprice-desc"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get productlist within category - size10",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounter = pm.variables.get('categoryCounter');\r",
+							"\r",
+							"// Get the category part of the url and set it as an environment variable\r",
+							"let urlCategoryPart = categories.children[categoryCounter].url;\r",
+							"pm.environment.set('urlCategoryPart',urlCategoryPart);\r",
+							"\r",
+							"// Add 1 to the categoryCounter environment variable\r",
+							"pm.variables.set('categoryCounter', categoryCounter + 1);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounter = pm.variables.get('categoryCounter');\r",
+							"\r",
+							"// Tests\r",
+							"\r",
+							"// Check that the status code is 200 (OK)\r",
+							"pm.test('The status code of the response should be 200', () => {\r",
+							"  pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"// Check that we have a response time of < 2 second\r",
+							"pm.test('The response time should be below 2 second', () => {\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+							"});\r",
+							"\r",
+							"// Test for at least one product in the main category\r",
+							"pm.test('There should be at least one product in a main category', () => {\r",
+							"\tlet responseData = pm.response.json();\r",
+							"    // First check if responseData.results is neither null nor undefined\r",
+							"    if (responseData.results && responseData.results.length > 0) {\r",
+							"        pm.expect(responseData.results.length).to.be.at.least(1);\r",
+							"    } else {\r",
+							"        pm.expect(responseData.results).to.not.exist;  // Check if it doesn't exist (null/undefined)\r",
+							"        console.log(\"No products found on this page.\");\r",
+							"    }\r",
+							"});\r",
+							"\r",
+							"// Extrahera URL-parameter size från request URL\r",
+							"let requestUrl = pm.request.url.toString(); // Hämtar hela URL-strängen\r",
+							"let urlParams = requestUrl.split('?')[1]; // Dela på frågetecken och hämta query-strängen\r",
+							"let params = urlParams.split('&'); // Dela på '&' för att få en array av parametrar\r",
+							"\r",
+							"// Extrahera size-parametern manuellt från arrayen\r",
+							"let sizeFromUrl = null;\r",
+							"params.forEach(param => {\r",
+							"    let [key, value] = param.split('='); // Dela på '=' för att få key och value\r",
+							"    if (key === 'size') {\r",
+							"        sizeFromUrl = parseInt(value); // Om det är \"size\", spara värdet som ett tal\r",
+							"    }\r",
+							"});\r",
+							"\r",
+							"// Hämta responsdata från JSON-svaret\r",
+							"let responseData = pm.response.json();\r",
+							"\r",
+							"// Extrahera pageSize från pagination\r",
+							"let pageSizeFromResponse = responseData.pagination.pageSize;\r",
+							"\r",
+							"// Testa om värdet från URL (size) stämmer med det i responseData (pagination.pageSize)\r",
+							"pm.test('The pageSize in the response should match the size in the URL.', function () {\r",
+							"    pm.expect(pageSizeFromResponse).to.eql(sizeFromUrl); // Kontrollera att värdena är lika\r",
+							"});\r",
+							"\r",
+							"// Repeat/loop this request until we have requested all main categories\r",
+							"if(categories.children[categoryCounter]){\r",
+							"  // Repeat this request (with new variable data for the url)\r",
+							"  pm.execution.setNextRequest('Get productlist within category - size10');\r",
+							"}\r",
+							"\r",
+							"if(!categories.children[categoryCounter]){\r",
+							"pm.variables.set('categoryCounter', 0);\r",
+							"pm.execution.setNextRequest('Get productlist within category - page5');\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{domain}}/api/c/{{urlCategoryPart}}?size=10&page=0&sort=topRated",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"c",
+						"{{urlCategoryPart}}"
+					],
+					"query": [
+						{
+							"key": "size",
+							"value": "10"
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "sort",
+							"value": "topRated"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get productlist within category - page5",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounter = pm.variables.get('categoryCounter');\r",
+							"\r",
+							"// Get the category part of the url and set it as an environment variable\r",
+							"let urlCategoryPart = categories.children[categoryCounter].url;\r",
+							"pm.environment.set('urlCategoryPart',urlCategoryPart);\r",
+							"\r",
+							"// Add 1 to the categoryCounter environment variable\r",
+							"pm.variables.set('categoryCounter', categoryCounter + 1);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Unpack from JSON all the categories\r",
+							"let categories = pm.variables.get('categoryData');\r",
+							"// Get the category counter and convert to number (using +)\r",
+							"let categoryCounter = pm.variables.get('categoryCounter');\r",
+							"\r",
+							"// Tests\r",
+							"\r",
+							"// Check that the status code is 200 (OK)\r",
+							"pm.test('The status code of the response should be 200', () => {\r",
+							"  pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"// Check that we have a response time of < 2 second\r",
+							"pm.test('The response time should be below 2 second', () => {\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+							"});\r",
+							"\r",
+							"// Test for at least one product in the main category\r",
+							"pm.test('There should be at least one product in a main category', () => {\r",
+							"\tlet responseData = pm.response.json();\r",
+							"    // First check if responseData.results is neither null nor undefined\r",
+							"    if (responseData.results && responseData.results.length > 0) {\r",
+							"        pm.expect(responseData.results.length).to.be.at.least(1);\r",
+							"    } else {\r",
+							"        pm.expect(responseData.results).to.not.exist;  // Check if it doesn't exist (null/undefined)\r",
+							"        console.log(\"No products found on this page.\");\r",
+							"    }\r",
+							"});\r",
+							"\r",
+							"// Extrahera URL-parameter page från request URL\r",
+							"let requestUrl = pm.request.url.toString(); // Hämtar hela URL-strängen\r",
+							"let urlParams = requestUrl.split('?')[1]; // Dela på frågetecken och hämta query-strängen\r",
+							"let params = urlParams.split('&'); // Dela på '&' för att få en array av parametrar\r",
+							"\r",
+							"// Extrahera page-parametern manuellt från arrayen\r",
+							"let pageFromUrl = null;\r",
+							"params.forEach(param => {\r",
+							"    let [key, value] = param.split('='); // Dela på '=' för att få key och value\r",
+							"    if (key === 'page') {\r",
+							"        pageFromUrl = parseInt(value); // Om det är \"page\", spara värdet som ett tal\r",
+							"    }\r",
+							"});\r",
+							"\r",
+							"// Hämta responsdata från JSON-svaret\r",
+							"let responseData = pm.response.json();\r",
+							"\r",
+							"// Extrahera currentPage från pagination\r",
+							"let currentPageFromResponse = responseData.pagination.currentPage;\r",
+							"\r",
+							"// Testa om värdet från URL (page) stämmer med det i responseData (pagination.currentPage)\r",
+							"pm.test('The currentPage in the response should match the page in the URL.', function () {\r",
+							"    pm.expect(currentPageFromResponse).to.eql(pageFromUrl); // Kontrollera att värdena är lika\r",
+							"});\r",
+							"\r",
+							"// Repeat/loop this request until we have requested all main categories\r",
+							"if(categories.children[categoryCounter]){\r",
+							"  // Repeat this request (with new variable data for the url)\r",
+							"  pm.execution.setNextRequest('Get productlist within category - page5');\r",
+							"}\r",
+							"\r",
+							"if(!categories.children[categoryCounter]){\r",
+							"pm.execution.setNextRequest(null);\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{domain}}/api/c/{{urlCategoryPart}}?size=30&page=4&sort=topRated",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"c",
+						"{{urlCategoryPart}}"
+					],
+					"query": [
+						{
+							"key": "size",
+							"value": "30"
+						},
+						{
+							"key": "page",
+							"value": "4"
+						},
+						{
+							"key": "sort",
+							"value": "topRated"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
