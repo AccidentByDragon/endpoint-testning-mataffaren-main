@@ -1,9 +1,10 @@
 {
 	"info": {
-		"_postman_id": "1bf6ea31-c112-493f-9eb7-10893095191d",
+		"_postman_id": "dce9d944-e496-4d3b-b273-bffafd6ff301",
 		"name": "Tests of Mataffären",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "39537779"
+		"_exporter_id": "33841556",
+		"_collection_link": "https://www.postman.com/noddan84/workspace/pvt23kimnordin/collection/33841556-dce9d944-e496-4d3b-b273-bffafd6ff301?action=share&source=collection_link&creator=33841556"
 	},
 	"item": [
 		{
@@ -43,6 +44,21 @@
 							"        pm.expect(category.url).to.be.string;",
 							"    }",
 							"});",
+							"",
+							"const categories=[];",
+							"const maxSubLevels = 2;",
+							"function getAllCategories(children, level = 1){",
+							"  for(let child of children){",
+							"    categories.push(child.url);",
+							"    if(level + 1 <= maxSubLevels){",
+							"        getAllCategories(child.children, level + 1);",
+							"    }",
+							"  }",
+							"}",
+							"",
+							"getAllCategories(responseData.children);",
+							"console.log(categories);",
+							"pm.variables.set('categories',categories);",
 							"",
 							"// Save the responseData as an environment variable",
 							"pm.variables.set('categoryData', responseData);",
